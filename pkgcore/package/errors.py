@@ -44,3 +44,21 @@ class ParseChksumError(ChksumBase):
         self.file = filename
         self.error = error
         self.missing = missing
+
+class InvalidSignature(ChksumBase):
+
+    def __init__(self, filename):
+        ChksumBase.__init__(self, "Invalid gpg signature for %r" % filename)
+        self.file = filename
+
+class MissingSignature(ChksumBase):
+
+    def __init__(self, filename):
+        ChksumBase.__init__(self, "Missing gpg signature for %r" % filename)
+        self.file = filename
+
+class ImportError(ChksumBase):
+
+    def __init__(self, filename):
+        ChksumBase.__init__(self, "Failed to import %r" % filename)
+        self.file = filename

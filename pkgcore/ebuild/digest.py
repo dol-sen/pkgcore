@@ -17,6 +17,7 @@ from snakeoil.demandload import demandload
 from snakeoil.mappings import make_SlottedDict_kls
 
 from pkgcore import gpg
+from pkgcore import log
 from pkgcore.package import errors
 from pkgcore.fs.livefs import iter_scan
 
@@ -24,6 +25,7 @@ demandload(
     "errno",
     'snakeoil:mappings',
     "snakeoil.lists:iflatten_instance",
+    "gkeys.gkeysinterface:GkeysInterface",
 )
 
 
@@ -163,7 +165,21 @@ class Manifest(object):
     def _pull_manifest(self):
         if self._source is None:
             return
-        source, gpg = self._source
+        source, enforce_gpg = self._source
+        # Hook in here to verify the sig
+        if enforce_gpg:
+            try:
+                gkeys = GkeysInterface("pkgcore", logger=log.logger)
+                is_good, has_sig = gkeys.verify_file(source)
+                if has_sig and not is_good:
+                    raise_from(errors.InvalidSignature(source))
+                elif not has_sig:
+                    raise_from(errors.MissingSignature(source))
+            except ImportError:
+                pass
+                #raise_from(errors.ImportError("GkeysInterface"))
+            except Exception as e:
+                raise e
         try:
             data = parse_manifest(source, ignore_gpg=gpg)
         except EnvironmentError as e:
